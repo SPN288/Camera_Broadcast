@@ -1,30 +1,28 @@
-const express = require("express");
 const WebSocket = require("ws");
-const http = require("http");
 
-const app = express();
-const server = http.createServer(app);
-const wss = new WebSocket.Server({ server });
+const wss = new WebSocket.Server({ port: 5000 });
 
 wss.on("connection", (ws) => {
-    console.log("Client connected");
+    console.log("New client connected");
 
     ws.on("message", (message) => {
         try {
-            const parsed = JSON.parse(message);
-            if (parsed.type === "image") {
-                wss.clients.forEach((client) => {
-                    if (client !== ws && client.readyState === WebSocket.OPEN) {
-                        client.send(JSON.stringify(parsed));
-                    }
-                });
-            }
+            const parsedMessage = JSON.parse(message);
+
+            // Broadcast to all connected clients
+            wss.clients.forEach((client) => {
+                if (client.readyState === WebSocket.OPEN) {
+                    client.send(JSON.stringify(parsedMessage));
+                }
+            });
+
+            //console.log("Received and Broadcast:", parsedMessage);
         } catch (err) {
-            console.error("Invalid JSON received:", err);
+            console.error("Error parsing message:", err);
         }
     });
 
     ws.on("close", () => console.log("Client disconnected"));
 });
 
-server.listen(5000, () => console.log("Server running on port 5000"));
+console.log("WebSocket server running on ws://localhost:5000");
